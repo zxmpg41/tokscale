@@ -19,6 +19,7 @@ pub enum SessionType {
     OpenClaw,
     Pi,
     Kimi,
+    Synthetic,
 }
 
 /// Result of scanning all session directories
@@ -37,6 +38,7 @@ pub struct ScanResult {
     pub openclaw_files: Vec<PathBuf>,
     pub pi_files: Vec<PathBuf>,
     pub kimi_files: Vec<PathBuf>,
+    pub synthetic_db: Option<PathBuf>,
 }
 
 impl ScanResult {
@@ -191,6 +193,7 @@ pub fn scan_all_sources(home_dir: &str, sources: &[String]) -> ScanResult {
     let include_openclaw = include_all || sources.iter().any(|s| s == "openclaw");
     let include_pi = include_all || sources.iter().any(|s| s == "pi");
     let include_kimi = include_all || sources.iter().any(|s| s == "kimi");
+    let include_synthetic = include_all || sources.iter().any(|s| s == "synthetic");
 
     let headless_roots = headless_roots(home_dir);
 
@@ -293,6 +296,16 @@ pub fn scan_all_sources(home_dir: &str, sources: &[String]) -> ScanResult {
         tasks.push((SessionType::Kimi, kimi_path, "wire.jsonl"));
     }
 
+    if include_synthetic {
+        // Octofriend (by Synthetic): ~/.local/share/octofriend/sqlite.db
+        let xdg_data =
+            std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| format!("{}/.local/share", home_dir));
+        let octofriend_db_path = PathBuf::from(format!("{}/octofriend/sqlite.db", xdg_data));
+        if octofriend_db_path.exists() {
+            result.synthetic_db = Some(octofriend_db_path);
+        }
+    }
+
     // Execute scans in parallel
     let scan_results: Vec<(SessionType, Vec<PathBuf>)> = tasks
         .into_par_iter()
@@ -315,6 +328,7 @@ pub fn scan_all_sources(home_dir: &str, sources: &[String]) -> ScanResult {
             SessionType::OpenClaw => result.openclaw_files.extend(files),
             SessionType::Pi => result.pi_files.extend(files),
             SessionType::Kimi => result.kimi_files.extend(files),
+            SessionType::Synthetic => {} // Synthetic uses DB, not file scanning
         }
     }
 
@@ -351,6 +365,7 @@ mod tests {
             openclaw_files: vec![],
             pi_files: vec![PathBuf::from("e.jsonl")],
             kimi_files: vec![],
+            synthetic_db: None,
         };
         assert_eq!(result.total_files(), 5);
     }
@@ -370,6 +385,7 @@ mod tests {
             openclaw_files: vec![],
             pi_files: vec![PathBuf::from("f.jsonl")],
             kimi_files: vec![],
+            synthetic_db: None,
         };
 
         let all = result.all_files();

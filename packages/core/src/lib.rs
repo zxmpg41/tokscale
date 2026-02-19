@@ -69,6 +69,7 @@ pub struct ParsedMessages {
     pub openclaw_count: i32,
     pub pi_count: i32,
     pub kimi_count: i32,
+    pub synthetic_count: i32,
     pub processing_time_ms: u32,
 }
 
@@ -187,7 +188,7 @@ use sessions::UnifiedMessage;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-const DEFAULT_SOURCES: [&str; 10] = [
+const DEFAULT_SOURCES: [&str; 11] = [
     "opencode",
     "claude",
     "codex",
@@ -198,6 +199,7 @@ const DEFAULT_SOURCES: [&str; 10] = [
     "openclaw",
     "pi",
     "kimi",
+    "synthetic",
 ];
 
 fn default_sources(include_cursor: bool) -> Vec<String> {
@@ -537,20 +539,76 @@ pub fn parse_local_sources(options: LocalParseOptions) -> napi::Result<ParsedMes
     let kimi_count = kimi_msgs.len() as i32;
     messages.extend(kimi_msgs);
 
+    // Parse Octofriend SQLite database (Synthetic's own CLI tool)
+    let mut synthetic_count: i32 = 0;
+    if let Some(db_path) = &scan_result.synthetic_db {
+        let synthetic_msgs: Vec<ParsedMessage> =
+            sessions::synthetic::parse_octofriend_sqlite(db_path)
+                .into_iter()
+                .map(|msg| unified_to_parsed(&msg))
+                .collect();
+        synthetic_count += synthetic_msgs.len() as i32;
+        messages.extend(synthetic_msgs);
+    }
+
+    // Post-processing: Detect synthetic.new usage in existing agent sessions.
+    // When agents (Claude Code, OpenCode, etc.) are configured to use synthetic.new,
+    // their session files contain hf:-prefixed model IDs or synthetic provider IDs.
+    // Re-attribute those messages to the "synthetic" source.
+    let mut opencode_delta: i32 = 0;
+    let mut claude_delta: i32 = 0;
+    let mut codex_delta: i32 = 0;
+    let mut gemini_delta: i32 = 0;
+    let mut amp_delta: i32 = 0;
+    let mut droid_delta: i32 = 0;
+    let mut openclaw_delta: i32 = 0;
+    let mut pi_delta: i32 = 0;
+    let mut kimi_delta: i32 = 0;
+
+    for msg in &mut messages {
+        if msg.source == "synthetic" {
+            continue;
+        }
+        if sessions::synthetic::is_synthetic_model(&msg.model_id)
+            || sessions::synthetic::is_synthetic_provider(&msg.provider_id)
+        {
+            match msg.source.as_str() {
+                "opencode" => opencode_delta += 1,
+                "claude" => claude_delta += 1,
+                "codex" => codex_delta += 1,
+                "gemini" => gemini_delta += 1,
+                "amp" => amp_delta += 1,
+                "droid" => droid_delta += 1,
+                "openclaw" => openclaw_delta += 1,
+                "pi" => pi_delta += 1,
+                "kimi" => kimi_delta += 1,
+                _ => {}
+            }
+            msg.source = "synthetic".to_string();
+            // Normalize model ID for pricing lookup
+            msg.model_id = sessions::synthetic::normalize_synthetic_model(&msg.model_id);
+            if msg.provider_id.is_empty() || msg.provider_id == "unknown" {
+                msg.provider_id = "synthetic".to_string();
+            }
+            synthetic_count += 1;
+        }
+    }
+
     // Apply date filters
     let filtered = filter_parsed_messages(messages, &options);
 
     Ok(ParsedMessages {
         messages: filtered,
-        opencode_count,
-        claude_count,
-        codex_count,
-        gemini_count,
-        amp_count,
-        droid_count,
-        openclaw_count,
-        pi_count,
-        kimi_count,
+        opencode_count: opencode_count - opencode_delta,
+        claude_count: claude_count - claude_delta,
+        codex_count: codex_count - codex_delta,
+        gemini_count: gemini_count - gemini_delta,
+        amp_count: amp_count - amp_delta,
+        droid_count: droid_count - droid_delta,
+        openclaw_count: openclaw_count - openclaw_delta,
+        pi_count: pi_count - pi_delta,
+        kimi_count: kimi_count - kimi_delta,
+        synthetic_count,
         processing_time_ms: start.elapsed().as_millis() as u32,
     })
 }

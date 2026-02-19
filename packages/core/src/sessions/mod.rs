@@ -12,6 +12,7 @@ pub mod kimi;
 pub mod openclaw;
 pub mod opencode;
 pub mod pi;
+pub mod synthetic;
 pub(crate) mod utils;
 
 use crate::TokenBreakdown;
