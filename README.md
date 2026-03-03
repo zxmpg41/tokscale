@@ -131,7 +131,7 @@ In the age of AI-assisted development, **tokens are the new energy**. They power
   - GitHub-style contribution graph with 9 color themes
   - Real-time filtering and sorting
   - Zero flicker rendering (native Zig engine)
-- **Multi-platform support** - Track usage across OpenCode, Claude Code, Codex CLI, Cursor IDE, Gemini CLI, Amp, Droid, OpenClaw, Pi, Kimi CLI, Qwen CLI, Roo Code, Kilo, and Synthetic
+- **Multi-platform support** - Track usage across OpenCode, Claude Code, Codex CLI, Cursor IDE, Gemini CLI, Amp, Droid, OpenClaw, Pi, Kimi CLI, Qwen CLI, Roo Code, Kilo, Mux, and Synthetic
 - **Real-time pricing** - Fetches current pricing from LiteLLM with 1-hour disk cache; automatic OpenRouter fallback and Cursor model pricing for newly released models
 - **Detailed breakdowns** - Input, output, cache read/write, and reasoning token tracking
 - **Native Rust core** - All parsing and aggregation done in Rust for 10x faster processing
@@ -576,7 +576,7 @@ The frontend provides a GitHub-style contribution graph visualization:
 - **Interactive tooltips**: Hover for detailed daily breakdowns
 - **Day breakdown panel**: Click to see per-source and per-model details
 - **Year filtering**: Navigate between years
-- **Source filtering**: Filter by platform (OpenCode, Claude, Codex, Cursor, Gemini, Amp, Droid, OpenClaw, Pi, Kimi, Qwen, Roo Code, Kilo, Synthetic)
+- **Source filtering**: Filter by platform (OpenCode, Claude, Codex, Cursor, Gemini, Amp, Droid, OpenClaw, Pi, Kimi, Qwen, Roo Code, Kilo, Mux, Synthetic)
 - **Stats panel**: Total cost, tokens, active days, streaks
 - **FOUC prevention**: Theme applied before React hydrates (no flash)
 
