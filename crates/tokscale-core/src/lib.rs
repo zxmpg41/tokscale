@@ -631,6 +631,28 @@ fn parse_all_messages_with_pricing(
         .collect();
     all_messages.extend(kilocode_messages);
 
+    let mux_messages: Vec<UnifiedMessage> = scan_result
+        .get(ClientId::Mux)
+        .par_iter()
+        .flat_map(|path| {
+            sessions::mux::parse_mux_file(path)
+                .into_iter()
+                .map(|mut msg| {
+                    msg.cost = pricing.calculate_cost(
+                        &msg.model_id,
+                        msg.tokens.input,
+                        msg.tokens.output,
+                        msg.tokens.cache_read,
+                        msg.tokens.cache_write,
+                        msg.tokens.reasoning,
+                    );
+                    msg
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    all_messages.extend(mux_messages);
+
     if include_synthetic {
         if let Some(db_path) = &scan_result.synthetic_db {
             let synthetic_messages: Vec<UnifiedMessage> =
@@ -1164,6 +1186,20 @@ pub fn parse_local_clients(options: LocalParseOptions) -> Result<ParsedMessages,
     let kilocode_count = kilocode_msgs.len() as i32;
     counts.set(ClientId::KiloCode, kilocode_count);
     messages.extend(kilocode_msgs);
+
+    let mux_msgs: Vec<ParsedMessage> = scan_result
+        .get(ClientId::Mux)
+        .par_iter()
+        .flat_map(|path| {
+            sessions::mux::parse_mux_file(path)
+                .into_iter()
+                .map(|msg| unified_to_parsed(&msg))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    let mux_count = mux_msgs.len() as i32;
+    counts.set(ClientId::Mux, mux_count);
+    messages.extend(mux_msgs);
 
     let mut synthetic_count: i32 = 0;
     if include_synthetic {
