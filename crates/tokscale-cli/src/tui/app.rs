@@ -434,6 +434,21 @@ impl App {
     }
 
     fn move_selection_up(&mut self) {
+        if self.current_tab == Tab::Stats && self.selected_graph_cell.is_some() {
+            let len = self.get_current_list_len();
+            if len == 0 {
+                return;
+            }
+
+            if self.selected_index > 0 {
+                self.selected_index -= 1;
+                if self.selected_index < self.scroll_offset {
+                    self.scroll_offset = self.selected_index;
+                }
+            }
+            return;
+        }
+
         let len = self.get_current_list_len();
         if len == 0 {
             return;
@@ -450,6 +465,22 @@ impl App {
     }
 
     fn move_selection_down(&mut self) {
+        if self.current_tab == Tab::Stats && self.selected_graph_cell.is_some() {
+            let len = self.get_current_list_len();
+            if len == 0 {
+                return;
+            }
+
+            let max_index = len - 1;
+            if self.selected_index < max_index {
+                self.selected_index += 1;
+                if self.selected_index >= self.scroll_offset + self.max_visible_items {
+                    self.scroll_offset = self.selected_index - self.max_visible_items + 1;
+                }
+            }
+            return;
+        }
+
         let len = self.get_current_list_len();
         if len == 0 {
             return;
