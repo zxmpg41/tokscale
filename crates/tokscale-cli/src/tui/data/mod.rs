@@ -909,6 +909,43 @@ after"#,
     }
 
     #[test]
+    #[serial]
+    fn test_data_loader_keeps_synthetic_gateway_messages_under_original_client() {
+        let temp_dir = TempDir::new().unwrap();
+        let previous_home = env::var_os("HOME");
+        let message_dir = temp_dir
+            .path()
+            .join(".local/share/opencode/storage/message/project-1");
+        fs::create_dir_all(&message_dir).unwrap();
+        fs::write(
+            message_dir.join("msg_001.json"),
+            r#"{"id":"msg-1","sessionID":"session-1","role":"assistant","modelID":"accounts/fireworks/models/deepseek-v3-0324","providerID":"fireworks","cost":0.25,"tokens":{"input":10,"output":5,"reasoning":0,"cache":{"read":0,"write":0}},"time":{"created":1733011200000}}"#,
+        )
+        .unwrap();
+
+        unsafe {
+            env::set_var("HOME", temp_dir.path());
+        }
+
+        let loader = DataLoader::new(None);
+        let usage = loader
+            .load(&[ClientId::OpenCode], &GroupBy::ClientProviderModel, true)
+            .unwrap();
+
+        assert_eq!(usage.models.len(), 1);
+        assert_eq!(usage.models[0].client, "opencode");
+        assert_eq!(usage.models[0].provider, "fireworks");
+        assert_eq!(usage.models[0].model, "deepseek-v3-0324");
+        assert_eq!(usage.models[0].tokens.total(), 15);
+        assert!((usage.models[0].cost - 0.25).abs() < f64::EPSILON);
+
+        match previous_home {
+            Some(home) => unsafe { env::set_var("HOME", home) },
+            None => unsafe { env::remove_var("HOME") },
+        }
+    }
+
+    #[test]
     fn test_calculate_streaks_uses_provided_today() {
         let today = NaiveDate::from_ymd_opt(2026, 3, 3).unwrap();
         let daily = vec![
