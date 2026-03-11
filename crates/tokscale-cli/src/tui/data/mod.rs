@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use chrono::{Datelike, Local, NaiveDate};
-use tokio::runtime::Runtime;
+use tokio::runtime::{Handle, Runtime};
 
 use tokscale_core::sessions::UnifiedMessage;
 use tokscale_core::{
@@ -141,19 +141,27 @@ impl DataLoader {
             sources.push("synthetic".to_string());
         }
 
-        let rt = Runtime::new()?;
-        let messages = rt
-            .block_on(async {
-                parse_local_unified_messages(LocalParseOptions {
-                    home_dir: Some(home),
-                    clients: Some(sources),
-                    since: self.since.clone(),
-                    until: self.until.clone(),
-                    year: self.year.clone(),
+        let opts = LocalParseOptions {
+            home_dir: Some(home),
+            clients: Some(sources),
+            since: self.since.clone(),
+            until: self.until.clone(),
+            year: self.year.clone(),
+        };
+
+        let messages = if Handle::try_current().is_ok() {
+            std::thread::scope(|s| {
+                s.spawn(|| {
+                    let rt = Runtime::new().map_err(|e| e.to_string())?;
+                    rt.block_on(parse_local_unified_messages(opts))
                 })
-                .await
+                .join()
+                .unwrap_or_else(|_| Err("data loader thread panicked".to_string()))
             })
-            .map_err(anyhow::Error::msg)?;
+        } else {
+            Runtime::new()?.block_on(parse_local_unified_messages(opts))
+        }
+        .map_err(anyhow::Error::msg)?;
 
         self.aggregate_messages(messages, group_by)
     }
@@ -901,6 +909,43 @@ after"#,
         assert_eq!(usage.agents[1].message_count, 2);
         assert!((usage.agents[1].cost - 2.7).abs() < f64::EPSILON);
         assert_eq!(usage.agents[1].tokens.total(), 147_000);
+
+        match previous_home {
+            Some(home) => unsafe { env::set_var("HOME", home) },
+            None => unsafe { env::remove_var("HOME") },
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_data_loader_keeps_synthetic_gateway_messages_under_original_client() {
+        let temp_dir = TempDir::new().unwrap();
+        let previous_home = env::var_os("HOME");
+        let message_dir = temp_dir
+            .path()
+            .join(".local/share/opencode/storage/message/project-1");
+        fs::create_dir_all(&message_dir).unwrap();
+        fs::write(
+            message_dir.join("msg_001.json"),
+            r#"{"id":"msg-1","sessionID":"session-1","role":"assistant","modelID":"accounts/fireworks/models/deepseek-v3-0324","providerID":"fireworks","cost":0.25,"tokens":{"input":10,"output":5,"reasoning":0,"cache":{"read":0,"write":0}},"time":{"created":1733011200000}}"#,
+        )
+        .unwrap();
+
+        unsafe {
+            env::set_var("HOME", temp_dir.path());
+        }
+
+        let loader = DataLoader::new(None);
+        let usage = loader
+            .load(&[ClientId::OpenCode], &GroupBy::ClientProviderModel, true)
+            .unwrap();
+
+        assert_eq!(usage.models.len(), 1);
+        assert_eq!(usage.models[0].client, "opencode");
+        assert_eq!(usage.models[0].provider, "fireworks");
+        assert_eq!(usage.models[0].model, "deepseek-v3-0324");
+        assert_eq!(usage.models[0].tokens.total(), 15);
+        assert!((usage.models[0].cost - 0.25).abs() < f64::EPSILON);
 
         match previous_home {
             Some(home) => unsafe { env::set_var("HOME", home) },
