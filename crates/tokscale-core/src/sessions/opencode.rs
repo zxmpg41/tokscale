@@ -4,7 +4,7 @@
 //! - SQLite database (OpenCode 1.2+): ~/.local/share/opencode/opencode.db
 //! - Legacy JSON files: ~/.local/share/opencode/storage/message/
 
-use super::{normalize_agent_name, UnifiedMessage};
+use super::{normalize_opencode_agent_name, UnifiedMessage};
 use crate::TokenBreakdown;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -64,7 +64,7 @@ pub fn parse_opencode_file(path: &Path) -> Option<UnifiedMessage> {
     let tokens = msg.tokens?;
     let model_id = msg.model_id?;
     let agent_or_mode = msg.mode.or(msg.agent);
-    let agent = agent_or_mode.map(|a| normalize_agent_name(&a));
+    let agent = agent_or_mode.map(|a| normalize_opencode_agent_name(&a));
 
     let session_id = msg.session_id.unwrap_or_else(|| "unknown".to_string());
 
@@ -155,7 +155,7 @@ pub fn parse_opencode_sqlite(db_path: &Path) -> Vec<UnifiedMessage> {
         };
 
         let agent_or_mode = msg.mode.or(msg.agent);
-        let agent = agent_or_mode.map(|a| normalize_agent_name(&a));
+        let agent = agent_or_mode.map(|a| normalize_opencode_agent_name(&a));
 
         let mut unified = UnifiedMessage::new_with_agent(
             "opencode",
