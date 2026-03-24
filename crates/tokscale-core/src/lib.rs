@@ -1631,10 +1631,10 @@ pub fn parsed_to_unified(msg: &ParsedMessage, cost: f64) -> UnifiedMessage {
 #[cfg(test)]
 mod tests {
     use super::{
+        ClientId, GroupBy, LocalParseOptions, TokenBreakdown, UnifiedMessage,
         apply_pricing_if_available, message_cache, normalize_model_for_grouping,
         parse_all_messages_with_pricing, parse_local_clients, pricing,
-        retain_for_requested_clients, select_local_parse_pricing, ClientId, GroupBy,
-        LocalParseOptions, TokenBreakdown, UnifiedMessage,
+        retain_for_requested_clients, select_local_parse_pricing,
     };
     use std::collections::{HashMap, HashSet};
     use std::io::Write;
@@ -1832,7 +1832,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let message_dir = source_home
                 .path()
                 .join(".local/share/opencode/storage/message/project-1");
@@ -1899,13 +1899,12 @@ mod tests {
                 )
                 .date
             );
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[cfg(unix)]
@@ -1919,7 +1918,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let message_dir = source_home
                 .path()
                 .join(".local/share/opencode/storage/message/project-1");
@@ -1955,13 +1954,12 @@ mod tests {
                 None,
             );
             assert_eq!(second_messages.len(), 1);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -1972,7 +1970,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let message_dir = source_home
                 .path()
                 .join(".local/share/opencode/storage/message/project-1");
@@ -2005,13 +2003,12 @@ mod tests {
             let loaded = message_cache::SourceMessageCache::load();
             let repaired_entry = loaded.get(&path).unwrap();
             assert_eq!(repaired_entry.messages.len(), 1);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -2022,7 +2019,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let db_dir = source_home.path().join(".local/share/opencode");
             std::fs::create_dir_all(&db_dir).unwrap();
             let db_path = db_dir.join("opencode.db");
@@ -2083,13 +2080,12 @@ mod tests {
                 None,
             );
             assert_eq!(refreshed_messages.len(), 2);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -2101,7 +2097,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let codex_dir = source_home.path().join(".codex/sessions");
             std::fs::create_dir_all(&codex_dir).unwrap();
             let path = codex_dir.join("session.jsonl");
@@ -2152,13 +2148,12 @@ mod tests {
             );
 
             assert_eq!(warm_messages, fresh_messages);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -2169,7 +2164,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let session_dir = source_home.path().join(".codex/sessions");
             std::fs::create_dir_all(&session_dir).unwrap();
             let path = session_dir.join("session.jsonl");
@@ -2209,13 +2204,12 @@ mod tests {
             );
 
             assert_eq!(messages, expected);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -2226,7 +2220,7 @@ mod tests {
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", cache_home.path());
 
-        let test_result = (|| {
+        {
             let session_dir = source_home.path().join(".codex/sessions");
             std::fs::create_dir_all(&session_dir).unwrap();
             let path = session_dir.join("session.jsonl");
@@ -2255,13 +2249,12 @@ mod tests {
 
             let cache = message_cache::SourceMessageCache::load();
             assert!(cache.get(&path).is_none());
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
@@ -2271,7 +2264,7 @@ mod tests {
         let source_home = tempfile::TempDir::new().unwrap();
         let original_home = std::env::var("HOME").ok();
         std::env::set_var("HOME", temp_home.path());
-        let test_result = (|| {
+        {
             let cursor_cache_dir = source_home.path().join(".config/tokscale/cursor-cache");
             std::fs::create_dir_all(&cursor_cache_dir).unwrap();
 
@@ -2307,13 +2300,12 @@ mod tests {
 
             assert_eq!(cached_messages.len(), 1);
             assert_eq!(cached_messages[0].cost, 0.0);
-        })();
+        }
 
         match original_home {
             Some(home) => std::env::set_var("HOME", home),
             None => std::env::remove_var("HOME"),
         }
-        test_result
     }
 
     #[test]
