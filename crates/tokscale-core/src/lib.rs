@@ -1098,11 +1098,11 @@ pub async fn get_model_report(options: ReportOptions) -> Result<ModelReport, Str
         clients
     });
 
-    let pricing = pricing::PricingService::get_or_init().await?;
+    let pricing = load_pricing_for_local_parse().await;
     let all_messages = parse_all_messages_with_pricing_with_env_strategy(
         &home_dir,
         &clients,
-        Some(&pricing),
+        pricing.as_deref(),
         options.use_env_roots,
     );
 
@@ -1153,11 +1153,11 @@ pub async fn get_monthly_report(options: ReportOptions) -> Result<MonthlyReport,
         clients
     });
 
-    let pricing = pricing::PricingService::get_or_init().await?;
+    let pricing = load_pricing_for_local_parse().await;
     let all_messages = parse_all_messages_with_pricing_with_env_strategy(
         &home_dir,
         &clients,
-        Some(&pricing),
+        pricing.as_deref(),
         options.use_env_roots,
     );
 
@@ -1210,7 +1210,10 @@ pub async fn get_monthly_report(options: ReportOptions) -> Result<MonthlyReport,
     })
 }
 
-pub async fn generate_graph(options: ReportOptions) -> Result<GraphResult, String> {
+async fn generate_graph_with_loaded_pricing(
+    options: ReportOptions,
+    pricing: Option<&pricing::PricingService>,
+) -> Result<GraphResult, String> {
     let start = Instant::now();
 
     let home_dir = get_home_dir_string(&options.home_dir)?;
@@ -1224,11 +1227,10 @@ pub async fn generate_graph(options: ReportOptions) -> Result<GraphResult, Strin
         clients
     });
 
-    let pricing = pricing::PricingService::get_or_init().await?;
     let all_messages = parse_all_messages_with_pricing_with_env_strategy(
         &home_dir,
         &clients,
-        Some(&pricing),
+        pricing,
         options.use_env_roots,
     );
 
@@ -1240,6 +1242,16 @@ pub async fn generate_graph(options: ReportOptions) -> Result<GraphResult, Strin
     let result = aggregator::generate_graph_result(contributions, processing_time_ms);
 
     Ok(result)
+}
+
+pub async fn generate_graph(options: ReportOptions) -> Result<GraphResult, String> {
+    let pricing = pricing::PricingService::get_or_init().await?;
+    generate_graph_with_loaded_pricing(options, Some(&pricing)).await
+}
+
+pub async fn generate_local_graph_report(options: ReportOptions) -> Result<GraphResult, String> {
+    let pricing = load_pricing_for_local_parse().await;
+    generate_graph_with_loaded_pricing(options, pricing.as_deref()).await
 }
 
 fn filter_messages_for_report(

@@ -3250,7 +3250,7 @@ fn run_graph_command(
 ) -> Result<()> {
     use colored::Colorize;
     use std::time::Instant;
-    use tokscale_core::{generate_graph, GroupBy, ReportOptions};
+    use tokscale_core::{generate_local_graph_report, GroupBy, ReportOptions};
 
     let show_progress = output.is_some() && !no_spinner;
     let include_cursor = home_dir.is_none()
@@ -3277,7 +3277,7 @@ fn run_graph_command(
     let rt = tokio::runtime::Runtime::new()?;
     let graph_result = rt
         .block_on(async {
-            generate_graph(ReportOptions {
+            generate_local_graph_report(ReportOptions {
                 home_dir,
                 use_env_roots,
                 clients,
