@@ -308,6 +308,11 @@ const actionButtonStyles = css`
   transition: opacity 150ms ease-in-out;
   cursor: pointer;
 
+  background-color: var(--color-btn-bg);
+  border-color: var(--color-border-default);
+
+  color: var(--color-fg-default);
+
   &:hover {
     opacity: 0.8;
   }
@@ -320,11 +325,6 @@ const actionButtonStyles = css`
 
 const ActionButton = styled.button`
   ${actionButtonStyles}
-
-  background-color: var(--color-btn-bg);
-  border-color: var(--color-border-default);
-
-  color: var(--color-fg-default);
 `;
 
 const ActionLink = styled.a`
