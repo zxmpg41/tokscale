@@ -133,12 +133,15 @@ const UserDetails = styled.div`
 `;
 
 const RankBadge = styled.div`
-  width: 2rem;
+  min-width: 2rem;
   height: 2rem;
+  padding: 0 0.375rem;
   border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
+  align-self: flex-start;
 `;
 
 const RankText = styled.span`
