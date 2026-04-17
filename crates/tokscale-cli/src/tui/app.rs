@@ -301,8 +301,7 @@ impl App {
             models.sort_by(|a, b| b.1.total_cmp(&a.1));
             for (rank, (model_name, _)) in models.iter().enumerate() {
                 let color = get_provider_shade(provider, rank);
-                self.model_shade_map
-                    .insert(model_name.to_string(), color);
+                self.model_shade_map.insert(model_name.to_string(), color);
             }
         }
     }
@@ -444,38 +443,30 @@ impl App {
             KeyCode::Char('s') => {
                 self.open_client_picker();
             }
-            KeyCode::Char('h') => {
-                if self.current_tab == Tab::Overview {
-                    self.chart_granularity = match self.chart_granularity {
-                        ChartGranularity::Daily => ChartGranularity::Hourly,
-                        ChartGranularity::Hourly => ChartGranularity::Daily,
-                    };
-                }
+            KeyCode::Char('h') if self.current_tab == Tab::Overview => {
+                self.chart_granularity = match self.chart_granularity {
+                    ChartGranularity::Daily => ChartGranularity::Hourly,
+                    ChartGranularity::Hourly => ChartGranularity::Daily,
+                };
             }
-            KeyCode::Char('v') => {
-                if self.current_tab == Tab::Hourly {
-                    self.hourly_view_mode = match self.hourly_view_mode {
-                        HourlyViewMode::Table => HourlyViewMode::Profile,
-                        HourlyViewMode::Profile => HourlyViewMode::Table,
-                    };
-                    self.reset_selection();
-                }
+            KeyCode::Char('v') if self.current_tab == Tab::Hourly => {
+                self.hourly_view_mode = match self.hourly_view_mode {
+                    HourlyViewMode::Table => HourlyViewMode::Profile,
+                    HourlyViewMode::Profile => HourlyViewMode::Table,
+                };
+                self.reset_selection();
             }
             KeyCode::Char('g') => {
                 self.open_group_by_picker();
             }
-            KeyCode::Enter => {
-                if self.current_tab == Tab::Stats {
-                    self.handle_graph_selection();
-                }
+            KeyCode::Enter if self.current_tab == Tab::Stats => {
+                self.handle_graph_selection();
             }
-            KeyCode::Esc => {
-                if self.selected_graph_cell.is_some() {
-                    self.selected_graph_cell = None;
-                    self.stats_breakdown_total_lines = 0;
-                    self.selected_index = 0;
-                    self.scroll_offset = 0;
-                }
+            KeyCode::Esc if self.selected_graph_cell.is_some() => {
+                self.selected_graph_cell = None;
+                self.stats_breakdown_total_lines = 0;
+                self.selected_index = 0;
+                self.scroll_offset = 0;
             }
             _ => {}
         }
@@ -1038,11 +1029,9 @@ impl App {
                     .then_with(|| a.date.cmp(&b.date))
             }),
             (SortField::Date, SortDirection::Descending) => {
-                daily.sort_by(|a, b| b.date.cmp(&a.date))
+                daily.sort_by_key(|b| std::cmp::Reverse(b.date))
             }
-            (SortField::Date, SortDirection::Ascending) => {
-                daily.sort_by(|a, b| a.date.cmp(&b.date))
-            }
+            (SortField::Date, SortDirection::Ascending) => daily.sort_by_key(|a| a.date),
         }
 
         daily
@@ -1075,11 +1064,9 @@ impl App {
                     .then_with(|| a.datetime.cmp(&b.datetime))
             }),
             (SortField::Date, SortDirection::Descending) => {
-                hourly.sort_by(|a, b| b.datetime.cmp(&a.datetime))
+                hourly.sort_by_key(|b| std::cmp::Reverse(b.datetime))
             }
-            (SortField::Date, SortDirection::Ascending) => {
-                hourly.sort_by(|a, b| a.datetime.cmp(&b.datetime))
-            }
+            (SortField::Date, SortDirection::Ascending) => hourly.sort_by_key(|a| a.datetime),
         }
 
         hourly
@@ -1355,7 +1342,7 @@ mod tests {
         };
         let app = App::new_with_cached_data(config, None).unwrap();
 
-        assert_eq!(app.should_quit, false);
+        assert!(!app.should_quit);
     }
 
     // ── Helper ──────────────────────────────────────────────────────

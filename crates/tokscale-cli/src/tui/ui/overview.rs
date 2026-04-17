@@ -79,7 +79,7 @@ fn render_chart(frame: &mut Frame, app: &App, area: Rect) {
         ChartGranularity::Daily => {
             let daily = &app.data.daily;
             let mut sorted_daily: Vec<_> = daily.iter().collect();
-            sorted_daily.sort_by(|a, b| a.date.cmp(&b.date));
+            sorted_daily.sort_by_key(|a| a.date);
 
             sorted_daily
                 .iter()
@@ -118,7 +118,7 @@ fn render_chart(frame: &mut Frame, app: &App, area: Rect) {
         ChartGranularity::Hourly => {
             let hourly = &app.data.hourly;
             let mut sorted: Vec<_> = hourly.iter().collect();
-            sorted.sort_by(|a, b| a.datetime.cmp(&b.datetime));
+            sorted.sort_by_key(|a| a.datetime);
 
             sorted
                 .iter()

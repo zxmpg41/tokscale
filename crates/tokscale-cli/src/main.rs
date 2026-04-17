@@ -4964,49 +4964,49 @@ mod tests {
     fn test_light_spinner_scanner_state_forward_start() {
         let (position, forward) = LightSpinner::scanner_state(0);
         assert_eq!(position, 0);
-        assert_eq!(forward, true);
+        assert!(forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_forward_mid() {
         let (position, forward) = LightSpinner::scanner_state(4);
         assert_eq!(position, 4);
-        assert_eq!(forward, true);
+        assert!(forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_forward_end() {
         let (position, forward) = LightSpinner::scanner_state(7);
         assert_eq!(position, 7);
-        assert_eq!(forward, true);
+        assert!(forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_hold_end() {
         let (position, forward) = LightSpinner::scanner_state(8);
         assert_eq!(position, 7);
-        assert_eq!(forward, true);
+        assert!(forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_backward_start() {
         let (position, forward) = LightSpinner::scanner_state(17);
         assert_eq!(position, 6);
-        assert_eq!(forward, false);
+        assert!(!forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_backward_end() {
         let (position, forward) = LightSpinner::scanner_state(23);
         assert_eq!(position, 0);
-        assert_eq!(forward, false);
+        assert!(!forward);
     }
 
     #[test]
     fn test_light_spinner_scanner_state_hold_start() {
         let (position, forward) = LightSpinner::scanner_state(24);
         assert_eq!(position, 0);
-        assert_eq!(forward, false);
+        assert!(!forward);
     }
 
     #[test]

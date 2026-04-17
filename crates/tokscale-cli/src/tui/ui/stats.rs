@@ -3,9 +3,7 @@ use ratatui::widgets::{
     Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
 };
 
-use super::widgets::{
-    format_cost, format_tokens, get_client_color, get_client_display_name,
-};
+use super::widgets::{format_cost, format_tokens, get_client_color, get_client_display_name};
 use crate::tui::app::{App, ClickAction};
 
 const CELL_WIDTH: u16 = 2;

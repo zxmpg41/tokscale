@@ -391,7 +391,7 @@ fn build_top_agents(parsed: &tokscale_core::ParsedMessages) -> Vec<WrappedAgentE
             .position(|name| *name == agent.name)
             .unwrap_or(usize::MAX)
     });
-    unpinned.sort_by(|a, b| b.messages.cmp(&a.messages));
+    unpinned.sort_by_key(|b| std::cmp::Reverse(b.messages));
 
     let mut combined = Vec::new();
     combined.extend(pinned);

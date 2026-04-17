@@ -693,10 +693,10 @@ impl DataLoader {
         });
 
         let mut daily: Vec<DailyUsage> = daily_map.into_values().collect();
-        daily.sort_by(|a, b| b.date.cmp(&a.date));
+        daily.sort_by_key(|b| std::cmp::Reverse(b.date));
 
         let mut hourly: Vec<HourlyUsage> = hourly_map.into_values().collect();
-        hourly.sort_by(|a, b| b.datetime.cmp(&a.datetime));
+        hourly.sort_by_key(|b| std::cmp::Reverse(b.datetime));
 
         let total_tokens: u64 = models.iter().map(|m| m.tokens.total()).sum();
         let total_cost: f64 = models

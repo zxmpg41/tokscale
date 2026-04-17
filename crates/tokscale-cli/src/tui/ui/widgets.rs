@@ -145,7 +145,7 @@ const META_SHADES: [(u8, u8, u8); 7] = [
 ];
 
 const CURSOR_SHADES: [(u8, u8, u8); 1] = [
-    (139, 92, 246),  // #8B5CF6
+    (139, 92, 246), // #8B5CF6
 ];
 
 pub fn get_provider_from_model(model: &str) -> &'static str {
