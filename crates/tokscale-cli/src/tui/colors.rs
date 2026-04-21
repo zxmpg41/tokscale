@@ -3,10 +3,27 @@ use std::collections::HashMap;
 use ratatui::style::Color;
 
 use super::data::ModelUsage;
-use super::ui::widgets::{get_provider_from_model, get_provider_shade};
+use super::ui::widgets::{get_provider_from_model, get_provider_shade, shade_from_base};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 pub fn model_shade_key(provider: &str, model: &str) -> String {
     format!("{provider}\0{model}")
+}
+
+fn hash_to_color(s: &str) -> Color {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    let hash = hasher.finish();
+    let r = ((hash >> 16) & 0xFF) as u8;
+    let g = ((hash >> 8) & 0xFF) as u8;
+    let b = (hash & 0xFF) as u8;
+    
+    // Mix with a pastel/light base to avoid dark muddy colors
+    let r = (r / 2) + 64;
+    let g = (g / 2) + 64;
+    let b = (b / 2) + 128; // slightly blue-tinted
+    Color::Rgb(r, g, b)
 }
 
 /// Builds a `(provider, model) -> Color` map where each provider's models are
@@ -18,6 +35,7 @@ pub fn model_shade_key(provider: &str, model: &str) -> String {
 /// the rank count. Ties on cost are resolved by model name so shade assignment
 /// stays deterministic across refreshes.
 pub fn build_model_shade_map(models: &[ModelUsage]) -> HashMap<String, Color> {
+    let config = crate::tui::config::TokscaleConfig::load();
     let mut by_provider: HashMap<&str, HashMap<&str, f64>> = HashMap::new();
     for m in models {
         let provider = provider_color_key(&m.provider, &m.model);
@@ -34,9 +52,17 @@ pub fn build_model_shade_map(models: &[ModelUsage]) -> HashMap<String, Color> {
         let mut ranked: Vec<(&str, f64)> = models_map.into_iter().collect();
         ranked.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         for (rank, (name, _)) in ranked.iter().enumerate() {
+            let color = if let Some(c) = config.get_model_color(name) {
+                shade_from_base(c, rank)
+            } else if provider == "unknown" {
+                // For unknown providers, give each model its own deterministic distinct color
+                shade_from_base(hash_to_color(name), rank)
+            } else {
+                get_provider_shade(provider, rank)
+            };
             map.insert(
                 model_shade_key(provider, name),
-                get_provider_shade(provider, rank),
+                color,
             );
         }
     }

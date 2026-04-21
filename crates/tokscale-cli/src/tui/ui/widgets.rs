@@ -88,7 +88,7 @@ pub fn get_provider_shade(provider: &str, rank: usize) -> Color {
 /// Generates a 7-step monochromatic palette from `base` by interpolating
 /// toward white. Factors roughly match the end-of-ramp lightness of the
 /// hardcoded palettes so overrides feel visually consistent.
-fn shade_from_base(base: Color, rank: usize) -> Color {
+pub fn shade_from_base(base: Color, rank: usize) -> Color {
     const FACTORS: [f32; 7] = [0.00, 0.11, 0.22, 0.33, 0.44, 0.56, 0.67];
     let Color::Rgb(r, g, b) = base else {
         return base;

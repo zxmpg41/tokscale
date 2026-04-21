@@ -14,7 +14,7 @@ use super::data::{AgentUsage, DailyUsage, DataLoader, HourlyUsage, ModelUsage, U
 use super::settings::Settings;
 use super::themes::{Theme, ThemeName};
 use super::ui::dialog::{ClientPickerDialog, DialogStack};
-use super::ui::widgets::{get_model_color, get_provider_from_model, get_provider_shade};
+use super::ui::widgets::{get_provider_from_model, get_provider_shade};
 
 /// Configuration for TUI initialization
 pub struct TuiConfig {
@@ -299,16 +299,33 @@ impl App {
         self.model_shade_map
             .get(&lookup_key)
             .copied()
-            .unwrap_or_else(|| get_provider_shade(provider, 0))
+            .unwrap_or_else(|| {
+                let config = crate::tui::config::TokscaleConfig::load();
+                if let Some(c) = config.get_model_color(model) {
+                    c
+                } else if provider == "unknown" {
+                    super::colors::model_shade_key("hash", model); // Dummy operation, color is what we want
+                    use std::hash::{Hash, Hasher};
+                    use std::collections::hash_map::DefaultHasher;
+                    let mut hasher = DefaultHasher::new();
+                    model.hash(&mut hasher);
+                    let hash = hasher.finish();
+                    let r = ((hash >> 16) & 0xFF) as u8;
+                    let g = ((hash >> 8) & 0xFF) as u8;
+                    let b = (hash & 0xFF) as u8;
+                    let r = (r / 2) + 64;
+                    let g = (g / 2) + 64;
+                    let b = (b / 2) + 128;
+                    Color::Rgb(r, g, b)
+                } else {
+                    get_provider_shade(provider, 0)
+                }
+            })
     }
 
     pub fn model_color(&self, model: &str) -> Color {
         let provider = get_provider_from_model(model);
-        let lookup_key = super::colors::model_shade_key(provider, model);
-        self.model_shade_map
-            .get(&lookup_key)
-            .copied()
-            .unwrap_or_else(|| get_model_color(model))
+        self.model_color_for(provider, model)
     }
 
     pub fn has_visible_data(&self) -> bool {

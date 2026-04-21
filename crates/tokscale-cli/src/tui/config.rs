@@ -22,6 +22,8 @@ pub struct ColorsConfig {
     pub providers: HashMap<String, String>,
     #[serde(default, alias = "sources")]
     pub clients: HashMap<String, String>,
+    #[serde(default)]
+    pub models: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -30,6 +32,8 @@ pub struct DisplayNamesConfig {
     pub providers: HashMap<String, String>,
     #[serde(default, alias = "sources")]
     pub clients: HashMap<String, String>,
+    #[serde(default)]
+    pub models: HashMap<String, String>,
 }
 
 impl TokscaleConfig {
@@ -53,6 +57,13 @@ impl TokscaleConfig {
             .and_then(|hex| parse_hex_color(hex))
     }
 
+    pub fn get_model_color(&self, model: &str) -> Option<Color> {
+        self.colors
+            .models
+            .get(&model.to_lowercase())
+            .and_then(|hex| parse_hex_color(hex))
+    }
+
     pub fn get_client_color(&self, client: &str) -> Option<Color> {
         self.colors
             .clients
@@ -64,6 +75,13 @@ impl TokscaleConfig {
         self.display_names
             .providers
             .get(&provider.to_lowercase())
+            .map(|s| s.as_str())
+    }
+
+    pub fn get_model_display_name(&self, model: &str) -> Option<&str> {
+        self.display_names
+            .models
+            .get(&model.to_lowercase())
             .map(|s| s.as_str())
     }
 
